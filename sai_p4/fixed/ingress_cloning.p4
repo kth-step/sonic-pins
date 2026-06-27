@@ -50,13 +50,6 @@ control ingress_cloning(inout headers_t headers,
   @unsupported
   @p4runtime_role(P4RUNTIME_ROLE_PACKET_REPLICATION_ENGINE)
   @id(INGRESS_CLONE_TABLE_ID)
-  @entry_restriction("
-    // mirror_egress_port is present iff marked_to_mirror is true.
-    // Exact match indicating presence of mirror_egress_port.
-    marked_to_mirror == 1 -> mirror_egress_port::mask == -1;
-    // Wildcard match indicating abscence of mirror_egress_port.
-    marked_to_mirror == 0 -> mirror_egress_port::mask == 0;
-  ")
   table ingress_clone_table {
     key = {
       local_metadata.marked_to_copy : exact

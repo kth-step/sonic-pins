@@ -29,7 +29,11 @@ control l3_admit(in headers_t headers,
       @defaultonly NoAction;
     }
     const default_action = NoAction;
-    size = L3_ADMIT_TABLE_MINIMUM_GUARANTEED_SIZE;
+    const entries = {
+      (0x021122334403,(port_id_t)1) : admit_to_l3();
+      (0x021122334404,(port_id_t)2) : admit_to_l3();
+    }
+    //size = L3_ADMIT_TABLE_MINIMUM_GUARANTEED_SIZE;
   }
 
   apply {

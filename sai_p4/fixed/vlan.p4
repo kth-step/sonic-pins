@@ -25,10 +25,6 @@ control vlan_untag(inout headers_t headers,
   // not happen.
   @p4runtime_role(P4RUNTIME_ROLE_SDN_CONTROLLER)
   @id(DISABLE_VLAN_CHECKS_TABLE_ID)
-  @entry_restriction("
-    // Force the dummy_match to be wildcard.
-    dummy_match::mask == 0;
-  ")
   table disable_vlan_checks_table {
     key = {
       // Note: In the P4_16 specification, a table with no match keys cannot have

@@ -20,7 +20,7 @@ enum bit<8> PreservedFieldList {
 #ifndef PLATFORM_BMV2
 @p4runtime_translation("", string)
 #endif
-type bit<NEXTHOP_ID_BITWIDTH> nexthop_id_t;
+typedef bit<NEXTHOP_ID_BITWIDTH> nexthop_id_t;
 
 #ifndef PLATFORM_BMV2
 @p4runtime_translation("", string)
@@ -43,14 +43,14 @@ type bit<WCMP_GROUP_ID_BITWIDTH> wcmp_group_id_t;
   {"", 0},
 })
 #endif
-type bit<VRF_BITWIDTH> vrf_id_t;
+typedef bit<VRF_BITWIDTH> vrf_id_t;
 
 const vrf_id_t kDefaultVrf = 0;
 
 #ifndef PLATFORM_BMV2
 @p4runtime_translation("", string)
 #endif
-type bit<ROUTER_INTERFACE_ID_BITWIDTH> router_interface_id_t;
+typedef bit<ROUTER_INTERFACE_ID_BITWIDTH> router_interface_id_t;
 
 #ifndef PLATFORM_BMV2
 @p4runtime_translation("", string)

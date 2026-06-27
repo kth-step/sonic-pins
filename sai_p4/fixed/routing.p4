@@ -74,14 +74,6 @@ control routing_lookup(in headers_t headers,
   // annotations.
   // TODO: Currently we don't expose any `sai_virtual_router_attr_t`
   // attributes here, but we may explore that in the future.
-  @entry_restriction("
-    // The VRF ID 0 (or '' in P4Runtime) encodes the default VRF, which cannot
-    // be read or written via this table, but is always present implicitly.
-    // TODO: This constraint should read `vrf_id != ''` (since
-    // constraints are a control plane (P4Runtime) concept), but
-    // p4-constraints does not currently support strings.
-    vrf_id != 0;
-  ")
   @p4runtime_role(P4RUNTIME_ROLE_ROUTING)
   @id(ROUTING_VRF_TABLE_ID)
   table vrf_table {
@@ -162,10 +154,6 @@ control routing_lookup(in headers_t headers,
   // `mark_to_drop`.
   //
   @id(ROUTING_SET_MULTICAST_GROUP_ID_ACTION_ID)
-  @action_restriction("
-    // Disallow 0 since it encodes 'no multicast' in V1Model.
-    multicast_group_id != 0;
-  ")
   action set_multicast_group_id(
       @id(1)
       @refers_to(builtin::multicast_group_table, multicast_group_id)
@@ -192,7 +180,15 @@ control routing_lookup(in headers_t headers,
       @proto_id(7) set_metadata_and_drop;
     }
     const default_action = drop;
-    size = ROUTING_IPV4_TABLE_MINIMUM_GUARANTEED_SIZE;
+    const entries = {
+//Works better for petr4
+//            (0, 0x0A000002 &&& 0xFFFFFFFF) : set_nexthop_id(2);
+//            (0, 0x0A000001 &&& 0xFFFFFFFF) : set_nexthop_id(1);
+            (0, 0x0A000002 &&& 0xFFFFFFFF) : set_nexthop_id(local_metadata,(nexthop_id_t)2);
+            (0, 0x0A000001 &&& 0xFFFFFFFF) : set_nexthop_id(local_metadata,(nexthop_id_t)1);
+    }
+
+    //size = ROUTING_IPV4_TABLE_MINIMUM_GUARANTEED_SIZE;
   }
   @p4runtime_role(P4RUNTIME_ROLE_ROUTING)
   @id(ROUTING_IPV6_TABLE_ID)
@@ -217,12 +213,6 @@ control routing_lookup(in headers_t headers,
     size = ROUTING_IPV6_TABLE_MINIMUM_GUARANTEED_SIZE;
   }
 
-  @entry_restriction("
-    // TODO: Use IPv4 address notation once it is supported.
-    // Only IPv4s in the multicast range 224.0.0.0/4 are supported.
-    ipv4_dst::value >= 0xe0000000;
-    ipv4_dst::value <= 0xefffffff;
-  ")
   // Models SAI IPMC entries of type (*,G) whose destination is an IPv4 address.
   @p4runtime_role(P4RUNTIME_ROLE_ROUTING)
   @id(ROUTING_IPV4_MULTICAST_TABLE_ID)
@@ -241,12 +231,6 @@ control routing_lookup(in headers_t headers,
     size = ROUTING_IPV4_MULTICAST_TABLE_MINIMUM_GUARANTEED_SIZE;
   }
 
-  @entry_restriction("
-    // TODO: Use IPv4 address notation once it is supported.
-    // Only IPv6s in the multicast range ff00::/8 are supported.
-    ipv6_dst::value >= 0xff000000000000000000000000000000;
-    ipv6_dst::value <= 0xffffffffffffffffffffffffffffffff;
-  ")
   // Models SAI IPMC entries of type (*,G) whose destination is an IPv6 address.
   @p4runtime_role(P4RUNTIME_ROLE_ROUTING)
   @id(ROUTING_IPV6_MULTICAST_TABLE_ID)
@@ -340,8 +324,12 @@ control routing_resolution(in headers_t headers,
       @proto_id(1) set_dst_mac;
       @defaultonly NoAction;
     }
+    const entries = {
+      (2, 0) : set_dst_mac(0x021122334402);
+      (1, 0) : set_dst_mac(0x021122334401);
+    }
     const default_action = NoAction;
-    size = NEIGHBOR_TABLE_MINIMUM_GUARANTEED_SIZE;
+    //size = NEIGHBOR_TABLE_MINIMUM_GUARANTEED_SIZE;
   }
 
   // Sets SAI_ROUTER_INTERFACE_ATTR_TYPE to SAI_ROUTER_INTERFACE_TYPE_SUB_PORT, and
@@ -352,10 +340,6 @@ control routing_resolution(in headers_t headers,
   // TODO: Remove @unsupported when the switch supports this
   // action.
   @unsupported
-  @action_restriction("
-    // Disallow reserved VLAN IDs with implementation-defined semantics.
-    vlan_id != 0 && vlan_id != 4095"
-  )
   action set_port_and_src_mac_and_vlan_id(@id(1) port_id_t port,
                                           @id(2) @format(MAC_ADDRESS)
                                           ethernet_addr_t src_mac,
@@ -380,7 +364,7 @@ control routing_resolution(in headers_t headers,
   @id(ROUTING_ROUTER_INTERFACE_TABLE_ID)
   table router_interface_table {
     key = {
-      router_interface_id_value : exact @id(1)
+      router_interface_id_value : exact //@id(1)set_i
                                         @name("router_interface_id");
     }
     actions = {
@@ -389,7 +373,11 @@ control routing_resolution(in headers_t headers,
       @defaultonly NoAction;
     }
     const default_action = NoAction;
-    size = ROUTER_INTERFACE_TABLE_MINIMUM_GUARANTEED_SIZE;
+    const entries = {
+      2 : set_port_and_src_mac((port_id_t)2,0x021122334404);
+      1 : set_port_and_src_mac((port_id_t)1,0x021122334403);
+    }
+    //size = ROUTER_INTERFACE_TABLE_MINIMUM_GUARANTEED_SIZE;
   }
 
   // Sets SAI_NEXT_HOP_ATTR_TYPE to SAI_NEXT_HOP_TYPE_IP. Also sets
@@ -477,7 +465,11 @@ control routing_resolution(in headers_t headers,
       @defaultonly NoAction;
     }
     const default_action = NoAction;
-    size = NEXTHOP_TABLE_MINIMUM_GUARANTEED_SIZE;
+    const entries = {
+      2 : set_ip_nexthop((router_interface_id_t)2,2);
+      1 : set_ip_nexthop((router_interface_id_t)1,1);
+    }
+    //size = NEXTHOP_TABLE_MINIMUM_GUARANTEED_SIZE;
   }
 
   // Sets SAI_TUNNEL_ATTR_TYPE to SAI_TUNNEL_TYPE_IPINIP_GRE,
